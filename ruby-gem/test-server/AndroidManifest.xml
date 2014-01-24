@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="#testPackage#"
+      android:versionCode="3"
+      android:versionName="0.3.0">
+    <application android:label="instrumentation_backend">
+      <uses-library android:name="android.test.runner" />
+      <uses-library android:name="com.google.android.maps" android:required="false" />
+      <activity
+              android:name="sh.calaba.instrumentationbackend.WakeUp"
+              android:label="WakeUp"
+              android:exported="true"
+              android:launchMode="singleInstance"
+              android:finishOnTaskLaunch="true"
+              android:stateNotNeeded="true"
+              android:noHistory="false"
+              android:excludeFromRecents="true"/>
+    </application>
+    <uses-sdk android:minSdkVersion="4" />
+    <instrumentation android:targetPackage="#targetPackage#" android:name="sh.calaba.instrumentationbackend.CalabashInstrumentationTestRunner" />
+    <instrumentation android:targetPackage="#targetPackage#" android:name="sh.calaba.instrumentationbackend.ClearAppData" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COURSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>

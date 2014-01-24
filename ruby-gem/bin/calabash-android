@@ -1,0 +1,119 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+require 'rbconfig'
+require 'calabash-android/helpers'
+
+# for ruby 1.9.1 and earlier
+unless defined? RbConfig.ruby
+  def RbConfig.ruby
+    File.join(RbConfig::CONFIG["bindir"], RbConfig::CONFIG["ruby_install_name"] + RbConfig::CONFIG["EXEEXT"])
+  end
+end
+
+
+if File.exist? "features/support/app_life_cycle_hooks.rb"
+  content = IO.read("features/support/app_life_cycle_hooks.rb")
+  if content.include? "include Calabash::Android::Operations"
+    puts """
+    Fatal Error!
+    Your Calabash hooks are not compatible with this version of calabash-android.
+    Please remove the following line from 'features/support/app_life_cycle_hooks.rb'.
+
+      include Calabash::Android::Operations
+
+    """
+
+    exit 1
+  end
+end
+
+
+require File.join(File.dirname(__FILE__), "calabash-android-helpers")
+require File.join(File.dirname(__FILE__), "calabash-android-generate")
+require File.join(File.dirname(__FILE__), "calabash-android-build")
+require File.join(File.dirname(__FILE__), "calabash-android-run")
+require File.join(File.dirname(__FILE__), "calabash-android-setup")
+require File.join(File.dirname(__FILE__), "calabash-android-console")
+
+@features_dir = File.join(FileUtils.pwd, "features")
+@support_dir = File.join(@features_dir, "support")
+@source_dir = File.join(File.dirname(__FILE__), '..', 'features-skeleton')
+@script_dir = File.join(File.dirname(__FILE__), '..', 'scripts')
+
+def is_apk_file?(file_path)
+  file_path.end_with? ".apk" and File.exist? file_path
+end
+
+def relative_to_full_path(file_path)
+  File.expand_path(file_path)
+end
+
+def raise_if_android_home_not_set
+  raise "Please set the ANDROID_HOME environment variable" unless ENV["ANDROID_HOME"]
+end
+
+if (ARGV.length == 0)
+  print_usage
+  exit 0
+end
+cmd = ARGV.shift
+if cmd == 'help'
+  print_help
+  exit 0
+elsif cmd == 'build'
+  raise_if_android_home_not_set
+  puts "Please specify the app you want to build a test server for" if (ARGV.empty? or not is_apk_file?(ARGV.first))
+  while not ARGV.empty? and is_apk_file?(ARGV.first)
+    calabash_build(relative_to_full_path(ARGV.shift))
+  end
+  exit 0
+elsif cmd == 'run'
+  raise_if_android_home_not_set
+  if ARGV.empty? or not is_apk_file?(ARGV.first)
+    exit calabash_run()
+  else
+    exit calabash_run(relative_to_full_path(ARGV.shift))
+  end
+elsif cmd == 'gen'
+  calabash_scaffold
+  exit 0
+elsif cmd == 'console'
+  if ARGV.empty?
+    puts "Please specify an app"
+    exit 1
+  end
+  unless File.exist? ARGV.first
+    puts "No such file #{ARGV.first}"
+    exit 1
+  end
+  calabash_console(relative_to_full_path(ARGV.shift))
+  exit 0
+elsif cmd == 'setup'
+  calabash_setup
+  exit 0
+elsif cmd == 'extract-manifest'
+  if ARGV.empty?
+    puts "Please specify an app"
+    exit 1
+  end
+  unless File.exist? ARGV.first
+    puts "No such file #{ARGV.first}"
+    exit 1
+  end
+
+  puts manifest ARGV.first
+  exit 0
+elsif cmd == 'resign'
+  unless File.exist?(File.expand_path(ARGV.first))
+    puts "No such file #{ARGV.first}"
+    exit 1
+  end
+  resign_apk(File.expand_path(ARGV.first))
+
+elsif cmd == 'version'
+  puts Calabash::Android::VERSION
+  exit 0
+else
+  print_usage
+end
